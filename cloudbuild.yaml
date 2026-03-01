@@ -1,0 +1,11 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - gcr.io/$PROJECT_ID/pitch-deck-ai-backend:latest
+      - .
+    dir: backend
+
+images:
+  - gcr.io/$PROJECT_ID/pitch-deck-ai-backend:latest

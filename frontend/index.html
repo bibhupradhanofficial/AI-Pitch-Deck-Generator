@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Pitch Deck Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <main class="container">
+    <header class="hero">
+      <div class="hero-badge">Glass + Gradient UI</div>
+      <h1 class="hero-title">
+        <span class="gradient-text">AI Pitch Deck Generator</span>
+      </h1>
+      <p class="hero-subtitle">From idea to investor-ready deck in 60 seconds</p>
+    </header>
+
+    <section class="card card-form">
+      <form id="pitchForm" class="form" autocomplete="off">
+        <label class="field field-lg">
+          <span class="field-label">Your Idea</span>
+          <textarea id="idea" rows="7" placeholder="Describe your startup idea..." required></textarea>
+        </label>
+
+        <div class="grid grid-2">
+          <label class="field">
+            <span class="field-label">Industry (optional)</span>
+            <select id="industry">
+              <option value="">Select an industry</option>
+              <option>AI / ML</option>
+              <option>SaaS</option>
+              <option>Fintech</option>
+              <option>Healthtech</option>
+              <option>Edtech</option>
+              <option>E-commerce</option>
+              <option>Climate</option>
+              <option>Consumer</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field-label">Target Market (optional)</span>
+            <select id="targetMarket">
+              <option value="">Select a market</option>
+              <option>B2B</option>
+              <option>B2C</option>
+              <option>B2B2C</option>
+              <option>Enterprise</option>
+              <option>SMB</option>
+              <option>Prosumer</option>
+              <option>Government</option>
+              <option>Other</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="tone">
+          <div class="tone-label">Tone</div>
+          <div class="tone-pills" role="tablist" aria-label="Tone">
+            <button class="pill is-active" type="button" data-tone="professional">Professional</button>
+            <button class="pill" type="button" data-tone="bold">Bold</button>
+            <button class="pill" type="button" data-tone="friendly">Friendly</button>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button id="generateBtn" class="btn btn-primary" type="submit">
+            Generate My Pitch Deck <span aria-hidden="true">✨</span>
+          </button>
+          <div id="formHint" class="hint">Uses your local backend at http://localhost:8080</div>
+        </div>
+      </form>
+    </section>
+
+    <section id="stream" class="stream is-hidden" aria-live="polite">
+      <div class="stream-header">
+        <div class="stream-left">
+          <div class="spinner" aria-hidden="true"></div>
+          <div>
+            <div class="stream-title">Generating…</div>
+            <div id="streamStatus" class="stream-status">Starting</div>
+          </div>
+        </div>
+        <div class="stream-bar" aria-hidden="true">
+          <div class="stream-bar-fill"></div>
+        </div>
+      </div>
+      <div id="statusLog" class="status-log"></div>
+    </section>
+
+    <section id="results" class="results">
+      <article id="cardSlides" class="card card-reveal is-hidden" data-card="slides">
+        <div class="card-head">
+          <h2>📋 Slides</h2>
+          <div class="card-meta">Deck preview</div>
+        </div>
+        <div id="slidesWrap" class="slides-grid"></div>
+      </article>
+
+      <article id="cardVoiceover" class="card card-reveal is-hidden" data-card="voiceover">
+        <div class="card-head">
+          <h2>🎙️ Voiceover Script</h2>
+          <button class="icon-btn" type="button" data-copy="#voiceoverText">Copy</button>
+        </div>
+        <div class="scrollbox">
+          <pre id="voiceoverText" class="mono"></pre>
+        </div>
+      </article>
+
+      <article id="cardSocial" class="card card-reveal is-hidden" data-card="social">
+        <div class="card-head">
+          <h2>📱 Social Media Captions</h2>
+          <div class="tabs" role="tablist" aria-label="Social captions">
+            <button class="tab is-active" type="button" data-tab="twitter">Twitter</button>
+            <button class="tab" type="button" data-tab="linkedin">LinkedIn</button>
+            <button class="tab" type="button" data-tab="instagram">Instagram</button>
+          </div>
+        </div>
+        <div class="tab-panels">
+          <div class="tab-panel is-active" data-panel="twitter">
+            <div class="panel-actions">
+              <button class="icon-btn" type="button" data-copy="#captionTwitter">Copy</button>
+            </div>
+            <pre id="captionTwitter" class="mono caption"></pre>
+          </div>
+          <div class="tab-panel" data-panel="linkedin">
+            <div class="panel-actions">
+              <button class="icon-btn" type="button" data-copy="#captionLinkedIn">Copy</button>
+            </div>
+            <pre id="captionLinkedIn" class="mono caption"></pre>
+          </div>
+          <div class="tab-panel" data-panel="instagram">
+            <div class="panel-actions">
+              <button class="icon-btn" type="button" data-copy="#captionInstagram">Copy</button>
+            </div>
+            <pre id="captionInstagram" class="mono caption"></pre>
+          </div>
+        </div>
+      </article>
+
+      <article id="cardCharts" class="card card-reveal is-hidden" data-card="charts">
+        <div class="card-head">
+          <h2>📊 Charts</h2>
+          <div class="card-meta">Generated visuals</div>
+        </div>
+        <div id="chartsGrid" class="img-grid img-grid-2"></div>
+      </article>
+
+      <article id="cardImages" class="card card-reveal is-hidden" data-card="images">
+        <div class="card-head">
+          <h2>🎨 Product Mockups</h2>
+          <div class="card-meta">Generated images</div>
+        </div>
+        <div id="imagesMasonry" class="masonry"></div>
+      </article>
+
+      <article id="cardPptx" class="card card-reveal is-hidden" data-card="pptx">
+        <div class="card-head">
+          <h2>📄 Download Deck</h2>
+          <div class="card-meta">PowerPoint</div>
+        </div>
+        <div class="download">
+          <a id="pptxBtn" class="btn btn-primary btn-block" href="#" target="_blank" rel="noopener">
+            Download .pptx
+          </a>
+        </div>
+        <div id="confetti" class="confetti" aria-hidden="true"></div>
+      </article>
+
+      <article id="cardVideo" class="card card-reveal is-hidden" data-card="video">
+        <div class="card-head">
+          <h2>🎬 Promo Video</h2>
+          <div class="card-meta">Optional</div>
+        </div>
+        <div id="videoWrap" class="video-wrap"></div>
+      </article>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+  <script src="app.js"></script>
+</body>
+
+</html>
