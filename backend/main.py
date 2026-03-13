@@ -42,6 +42,11 @@ async def _startup() -> None:
     asyncio.create_task(_ensure())
 
 
+@app.get("/")
+def root():
+    return {"message": "AI Pitch Deck Generator API is running. Visit /docs for documentation or /health for status."}
+
+
 @app.get("/health")
 def health() -> HealthResponse:
     return HealthResponse()

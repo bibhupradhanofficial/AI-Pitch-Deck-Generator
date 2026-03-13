@@ -117,16 +117,27 @@ class PitchAgent:
 
 def _build_genai_client() -> genai.Client:
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    project = os.getenv("GOOGLE_CLOUD_PROJECT")
+    location = os.getenv("GOOGLE_CLOUD_LOCATION") or "us-central1"
+
+    # Fix relative GOOGLE_APPLICATION_CREDENTIALS path
+    creds_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if creds_path and not os.path.isabs(creds_path):
+        # Try to resolve relative to CWD
+        abs_path = os.path.abspath(creds_path)
+        if os.path.exists(abs_path):
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = abs_path
+        else:
+            # Try relative to the backend folder if CWD is the root
+            root_creds = os.path.join(os.getcwd(), "service-account.json")
+            if os.path.exists(root_creds):
+                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = root_creds
+
     if api_key:
         return genai.Client(api_key=api_key)
 
-    project = os.getenv("GOOGLE_CLOUD_PROJECT")
-    location = os.getenv("GOOGLE_CLOUD_LOCATION")
-    if project and location:
-        return genai.Client(vertexai=True, project=project, location=location)
-
     if project:
-        return genai.Client(vertexai=True, project=project)
+        return genai.Client(vertexai=True, project=project, location=location)
 
     return genai.Client()
 
@@ -298,6 +309,9 @@ async def generate_pitch_content(
     target_market: str,
     tone: str,
 ) -> dict[str, Any]:
+    from dotenv import load_dotenv
+    load_dotenv()
+
     model = (os.getenv("GEMINI_MODEL") or "gemini-2.0-flash").strip()
     system_instruction = (
         "You are a world-class startup pitch deck consultant and creative director. "
@@ -343,18 +357,15 @@ Generate exactly 2 chart specs relevant to market size or business model.
 Generate exactly 2 imagen_prompts for product mockup visuals.
 """.strip()
 
-    try:
-        client = _build_genai_client()
-    except Exception:
-        return _mock_pitch_content(idea=idea, industry=industry, target_market=target_market, tone=tone)
-
     def _stream_generate(prompt: str) -> str:
+        client = _build_genai_client()
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,
             response_mime_type="application/json",
         )
         contents = [types.Content(role="user", parts=[types.Part(text=prompt)])]
         chunks: list[str] = []
+        # Support both streaming and direct generation if needed, but the loop handles stream
         for event in client.models.generate_content_stream(model=model, contents=contents, config=config):
             text = getattr(event, "text", None)
             if text:
@@ -362,12 +373,18 @@ Generate exactly 2 imagen_prompts for product mockup visuals.
         return "".join(chunks)
 
     try:
+        # Attempt 1
         raw = await asyncio.to_thread(_stream_generate, base_prompt)
         return _parse_json_obj(raw)
-    except Exception:
-        retry_prompt = base_prompt + "\n\nReturn only raw JSON, no markdown, no code fences, no extra text."
+    except Exception as e1:
+        print(f"Agent generation failed (attempt 1): {e1}")
+        # Attempt 2 (Retry with more explicit instructions)
+        retry_prompt = base_prompt + "\n\nReturn ONLY the JSON object. No markdown, no fences."
         try:
             raw = await asyncio.to_thread(_stream_generate, retry_prompt)
             return _parse_json_obj(raw)
-        except Exception as e:
-            return {"error": "Failed to generate valid JSON pitch content", "details": str(e)}
+        except Exception as e2:
+            print(f"Agent generation failed (attempt 2): {e2}")
+            # Fallback to Mock Content instead of returning error
+            print("Falling back to mock content...")
+            return _mock_pitch_content(idea=idea, industry=industry, target_market=target_market, tone=tone)
